@@ -3,6 +3,7 @@
 """Crawler server."""
 from klein import Klein
 from controllers.crawler_controller import execute_chaining_crawler
+from utils.url_utils import get_filters_from_request
 
 
 app = Klein()
@@ -18,7 +19,9 @@ def run_scrapy_crawler(request):
     :rtype: String
     """
     request.setHeader('Content-Type', 'application/json')
-    d = execute_chaining_crawler()
+    # filters = get_filters_from_request(request)
+    d = execute_chaining_crawler(filters=None)
+    # d = "Hello world"
     return d
 
 
@@ -32,7 +35,7 @@ def run_selenium_crawler(request):
     :rtype: String
     """
     request.setHeader('Content-Type', 'application/json')
-    return "Not implented yet."
+    return "Not implented yet. Sorry men working"
 
 
 if __name__ == '__main__':

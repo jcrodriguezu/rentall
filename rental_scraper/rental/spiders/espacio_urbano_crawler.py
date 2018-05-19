@@ -1,37 +1,37 @@
 # -*- coding: utf-8 -*-
 """Rental crawler."""
 
+from scrapy.http import Request
 from scrapy.linkextractors import LinkExtractor
 from scrapy.spiders import CrawlSpider, Rule
-
 from spiders.items import RentalItem
-from errors import CrawlerConfigNotProvidedError
+from utils.url_utils import append_filters_to_url
 
 
-class RentalCrawler(CrawlSpider):
-    """Generic crawler for house lease."""
+class EspacioUrbanoCrawler(CrawlSpider):
+    """Espacio Urbano crawler."""
 
-    name = "rental_crawler"
+    name = "espacio_urbano_crawler"
+    domain = 'espaciourbano.com'
+    # start_urls = ['http://www.espaciourbano.com/BR_BuscarAnuncios_Resultado_Arriendo.asp?sNegocio=1&sZona=1&select2=M%E1s+recientes&rFotoanuncio=1&button=Buscar']
+    start_urls = ['http://www.espaciourbano.com/BR_BuscarAnuncios_Resultado_Arriendo.asp?sNegocio=1&sZona=1&sCiudad=10012&sRango1=0&sRango2=999999999999&select2=M%E1s+recientes&rFotoanuncio=0&button=Buscar']
 
-    def __init__(self, crawler_config, *args, **kwargs):
+    pagination_regex = 'offset=[0-9]|[1-9][0-9]'
+    xpath_item_list = '//div[@id="FrameBlanco"]/table/tr[3]/td[1]/table/tr/td'
+    xpath_neighborhood = 'following::td[1]/table/tr/td[2]/div/span/text()'
+    xpath_square_meters = 'following::td[1]/table/tr/td[3]/div/strong/text()'
+    xpath_price = 'following::td[1]/table/tr/td[4]/div/strong[2]/text()'
+    xpath_url = 'div/table/tr/td/a/@href'
+    xpath_detail = 'div/table/tr/td/div[@class="FooterText"]/text()'
+    xpath_title = 'div/table/tr/td/div[@class="FooterText"]/span[@class="style91"]/span/text()'
+    xpath_code = 'following::td[1]/table/tr/td[1]/div/text()'
+    xpath_next = '//div/span/a/img[@src="images/btn_siguiente.gif"]/ancestor::a'
+
+    def __init__(self, crawler_config, filters=None, *args, **kwargs):
         """Rental Crawler constructor."""
-        if not crawler_config:
-            raise CrawlerConfigNotProvidedError
-
-        self.name = crawler_config.name
-        self.domain = crawler_config.domain
+        self.filters = filters
+        self.crawler_config = crawler_config
         self.allowed_domains = [self.domain]
-        self.start_urls = [crawler_config.start_url]
-        self.pagination_regex = crawler_config.pagination_regex
-        self.xpath_item_list = crawler_config.xpath_item_list
-        self.xpath_neighborhood = crawler_config.xpath_neighborhood
-        self.xpath_square_meters = crawler_config.xpath_square_meters
-        self.xpath_price = crawler_config.xpath_price
-        self.xpath_url = crawler_config.xpath_url
-        self.xpath_detail = crawler_config.xpath_detail
-        self.xpath_title = crawler_config.xpath_title
-        self.xpath_code = crawler_config.xpath_code
-        self.xpath_next = crawler_config.xpath_next
         if self.pagination_regex:
             self.rules = [
                 Rule(
@@ -43,7 +43,18 @@ class RentalCrawler(CrawlSpider):
                     follow=False  # Change this to follow the next page
                 )
             ]
-        super(RentalCrawler, self).__init__(*args, **kwargs)
+        super(EspacioUrbanoCrawler, self).__init__(*args, **kwargs)
+
+#    def start_requests(self):
+#        """Start the request to the urls.
+#
+#        :return: Request response
+#        """
+#        for url in self.start_urls:
+#            final_url = append_filters_to_url(
+#                url, self.crawler_config, self.filters
+#            )
+#            yield Request(final_url)
 
     def parse_item(self, response):
         """Parse the items according to the crawler config data.

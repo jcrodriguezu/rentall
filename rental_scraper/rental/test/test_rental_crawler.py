@@ -3,9 +3,9 @@
 
 import unittest
 
-from rental.models.crawler_config import CrawlerConfig
-from rental.spiders.rental_crawler import RentalCrawler
-from rental.errors import CrawlerConfigNotProvidedError
+from errors import CrawlerConfigNotProvidedError
+from models.crawler_config import CrawlerConfig
+from spiders.rental_crawler import RentalCrawler
 
 
 class TestRentalCrawler(unittest.TestCase):
@@ -23,7 +23,8 @@ class TestRentalCrawler(unittest.TestCase):
     def test_crawler_parse_no_config(self):
         """Test none config data."""
         with self.assertRaises(CrawlerConfigNotProvidedError):
-            rental_crawler = RentalCrawler(crawler_config=None)
+            rental_crawler = RentalCrawler(
+                crawler_config=None, filters=None)
             rental_crawler.parse(response=None)
 
     def test_empty_crawler_config(self):
@@ -31,7 +32,8 @@ class TestRentalCrawler(unittest.TestCase):
         with self.assertRaises(
                 ValueError, msg="RentalCrawler must have a name"):
             crawler_config = CrawlerConfig()
-            rental_crawler = RentalCrawler(crawler_config=crawler_config)
+            rental_crawler = RentalCrawler(
+                crawler_config=crawler_config, filters=None)
             rental_crawler.parse(response=None)
 
     def test_crawler_config_empty_string_params(self):
@@ -39,7 +41,8 @@ class TestRentalCrawler(unittest.TestCase):
         with self.assertRaises(
                 ValueError, msg="RentalCrawler must have a name"):
             crawler_config = CrawlerConfig(**self.empty_string_config_data)
-            rental_crawler = RentalCrawler(crawler_config=crawler_config)
+            rental_crawler = RentalCrawler(
+                crawler_config=crawler_config, filters=None)
             rental_crawler.parse_item(response=None)
 
     def test_crawler_config_with_name_param(self):
@@ -50,7 +53,8 @@ class TestRentalCrawler(unittest.TestCase):
             data_with_name = self.empty_string_config_data.copy()
             data_with_name['name'] = "test"
             crawler_config = CrawlerConfig(**self.data_with_name)
-            rental_crawler = RentalCrawler(crawler_config=crawler_config)
+            rental_crawler = RentalCrawler(
+                crawler_config=crawler_config, filters=None)
             list(rental_crawler.parse_item(response=None))
 
 

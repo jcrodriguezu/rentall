@@ -2,25 +2,32 @@ version: '3'
 
 services:
   rental_db:
+    restart: always
     image: mongo:3.6
     volumes:
-      - ./mongo-data:/var/lib/mongodb
+      - ./data:/data/db
     ports:
       - "27018:27018"
   web:
+    restart: always
     build: ./rental_web_admin
     volumes:
       - ./rental_web_admin:/rental_web_admin
     ports:
-      - "8000:8000"
+      - "8005:8005"
     depends_on:
       - rental_db
+    links:
+      - rental_db
   crawler:
+    restart: always
     build: ./rental_scraper
     volumes:
       - ./rental_scraper:/rental_scraper
     ports:
       - "8080:8080"
     depends_on:
+      - rental_db
+    links:
       - rental_db
 

@@ -8,12 +8,12 @@ from twisted.internet import defer
 
 from models.crawler_config import CrawlerConfig
 from settings import DATA_BASE
-from spiders.rental_crawler import RentalCrawler
 from utils.crawler_runner import RentalCrawlerRunner
+from controllers.crawler_register import CRAWLER_REGISTER
 
 
 @defer.inlineCallbacks
-def execute_chaining_crawler():
+def execute_chaining_crawler(filters):
     """Execute chaining crawler.
 
     :return: Crawler results
@@ -22,10 +22,11 @@ def execute_chaining_crawler():
     result = ""
     runner = RentalCrawlerRunner()
     mongoengine.connect(**DATA_BASE)
-    for rental in CrawlerConfig.objects:
-        print("initiating {0}".format(rental.name))
+    for rental in CrawlerConfig.objects(status="ACTIVE"):
+        print("Initiating {0}".format(rental.name))
+        rental_crawler = CRAWLER_REGISTER[rental.name]
         crawler_result = yield runner.crawl(
-            RentalCrawler, crawler_config=rental)
+            rental_crawler, crawler_config=rental, filters=filters)
         result += yield return_spider_output(crawler_result)
     defer.returnValue(result)
 

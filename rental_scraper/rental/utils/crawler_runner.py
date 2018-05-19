@@ -23,8 +23,6 @@ class RentalCrawlerRunner(CrawlerRunner):
         :return: defered results
         :rtype: defered
         """
-        print("executing crawler runner")
-
         # keep all items scraped
         self.items = []
 
@@ -39,7 +37,6 @@ class RentalCrawlerRunner(CrawlerRunner):
 
         # add callback - when crawl is done cal return_items
         dfd.addCallback(self.return_items)
-        print("finishing crawler runner")
         return dfd
 
     def item_scraped(self, item, response, spider):

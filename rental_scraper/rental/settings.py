@@ -95,5 +95,9 @@ DATA_BASE = {
     # 'username': "rental_admin",
     # 'password': "mongo_db",
     'host': "rental_db",
+    # 'host': "localhost",
     'port': 27017
 }
+
+# Available filters
+FILTERS = ['city', 'neighborhood', 'price', 'square_meters']

@@ -1,33 +1,101 @@
-version: '3'
+version: '3.5'
 
 services:
+  airflow:
+    restart: always
+    build: ./airflow
+    environment: 
+      - LOAD_EX=n
+      - EXECUTOR=Local
+    depends_on:
+      - postgres
+      - rental_db
+    volumes: 
+      - ./airflow/dags:/usr/local/airflow/dags
+      - ./airflow/logs:/usr/local/airflow/logs
+      - ./scrapers-data:/scrapers-data
+    links:
+      - rental_db
+      - postgres
+
   rental_db:
     restart: always
-    image: mongo:3.6
+    image: mongo:4.2
+    command: ["--bind_ip_all"]
     volumes:
-      - ./data:/data/db
+      - ./mongo-data:/data/db
     ports:
-      - "27018:27018"
-  web:
+      - "27017:27017"
+
+  postgres:
     restart: always
-    build: ./rental_web_admin
-    volumes:
-      - ./rental_web_admin:/rental_web_admin
+    image: postgres:9.6
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - postgres=airflow
     ports:
-      - "8005:8005"
+      - "5439:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  initdb:
+    build: ./airflow
+    entrypoint: airflow initdb
     depends_on:
-      - rental_db
-    links:
-      - rental_db
-  crawler:
+      - postgres
+
+  webserver:
+    build: ./airflow
     restart: always
-    build: ./rental_scraper
+    depends_on:
+      - postgres
+    environment: 
+      - LOAD_EX=n
+      - EXECUTOR=Local
+    logging:
+      options:
+          max-size: 10m
+          max-file: "3"
     volumes:
-      - ./rental_scraper:/rental_scraper
+      - ./airflow/dags:/usr/local/airflow/dags
+      - ./airflow/logs:/usr/local/airflow/logs
+      - ./scrapers-data:/scrapers-data
     ports:
       - "8080:8080"
-    depends_on:
-      - rental_db
+    entrypoint: airflow webserver
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
     links:
       - rental_db
+      - postgres
 
+  # scheduler:
+  #   build: ./airflow
+  #   restart: always
+  #   depends_on:
+  #     - webserver
+  #   volumes:
+  #     - ./airflow/dags:/usr/local/airflow/dags
+  #     - ./airflow/logs:/usr/local/airflow/logs
+  #   entrypoint: airflow scheduler
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-scheduler.pid ]"]
+  #     interval: 30s
+  #     timeout: 30s
+  #     retries: 3
+
+  # web:
+  #   restart: always
+  #   build: ./rental_web_admin
+  #   volumes:
+  #     - ./rental_web_admin:/rental_web_admin
+  #   ports:
+  #     - "8005:8005"
+  #   depends_on:
+  #     - rental_db
+  #   links:
+  #     - rental_db

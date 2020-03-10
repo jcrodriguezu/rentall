@@ -5,6 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
+*.swp
 
 # Distribution / packaging
 .Python
@@ -107,3 +108,7 @@ venv.bak/
 .vscode/
 
 /data
+/mongo-data
+/scrapers-data
+
+/airflow/logs

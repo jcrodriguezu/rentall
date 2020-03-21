@@ -48,6 +48,16 @@ scrapy_page_op = ScrapyOperator(
     task_id='scrape_pages',
     provide_context=True,
     scraper_cls=EspacioUrbanoPageSpider,
+    scraper_settings={
+        'AUTOTHROTTLE_ENABLED': True,
+        'AUTOTHROTTLE_START_DELAY': 60.0,
+        'AUTOTHROTTLE_MAX_DELAY': 300.0,
+        'AUTOTHROTTLE_TARGET_CONCURRENCY': 0.5,
+        'AUTOTHROTTLE_DEBUG': True,
+        'DOWNLOAD_DELAY': 30.0,
+        'CONCURRENT_REQUESTS_PER_IP': 1,
+        'LOG_FORMAT': '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+    },
     dag=dag
 )
 
@@ -57,7 +67,8 @@ scrapy_item_op = ScrapyOperator(
     scraper_cls=EspacioUrbanoItemSpider,
     scraper_settings={
         'FEED_FORMAT': 'json',
-        'FEED_URI': f'/scrapers-data/json/{EspacioUrbanoItemSpider.__name__}.json'
+        'FEED_URI': f'/scrapers-data/json/{EspacioUrbanoItemSpider.__name__}.json',
+        'LOG_FORMAT': '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
         },
     dag=dag
 )

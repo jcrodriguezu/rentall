@@ -1,4 +1,4 @@
-FROM puckel/docker-airflow:1.10.6
+FROM puckel/docker-airflow:1.10.9
 
 RUN pip install --user psycopg2-binary
 

@@ -1,12 +1,10 @@
 
 """Espacio urbano spider."""
 import os
+import logging
+
 import scrapy
-
 from scrapy.utils.log import configure_logging
-
-
-configure_logging(install_root_handler=False)
 
 
 class EspacioUrbanoPageSpider(scrapy.Spider):

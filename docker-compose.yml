@@ -44,6 +44,8 @@ services:
     entrypoint: airflow initdb
     depends_on:
       - postgres
+    links:
+      - postgres
 
   webserver:
     build: ./airflow

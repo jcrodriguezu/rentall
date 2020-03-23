@@ -47,7 +47,7 @@ class EspacioUrbanoItemSpider(scrapy.Spider):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.start_urls = get_file_list('espaciourbano')
+        self.start_urls = file_list_as_url('espaciourbano')
 
     def parse(self, response):
         items = response.xpath(self.xpath_item_list)
@@ -77,6 +77,6 @@ class EspacioUrbanoItemSpider(scrapy.Spider):
         return data
 
 
-def get_file_list(name, path="/scrapers-data/html/"):
+def file_list_as_url(name, path="/scrapers-data/html/"):
     return [f"file:////{f.path}" for f in os.scandir(path=path)
             if f.is_file() and name in f.name]

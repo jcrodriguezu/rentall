@@ -7,6 +7,9 @@ services:
     environment: 
       - LOAD_EX=n
       - EXECUTOR=Local
+      - DB_CONN=mongodb://rental_db:27017/
+      - DB_NAME=rentals
+      - COLLECTION=houses_data
     depends_on:
       - postgres
       - rental_db
@@ -55,6 +58,9 @@ services:
     environment: 
       - LOAD_EX=n
       - EXECUTOR=Local
+      - DB_CONN=mongodb://rental_db:27017/
+      - DB_NAME=rentals
+      - COLLECTION=houses_data
     logging:
       options:
           max-size: 10m

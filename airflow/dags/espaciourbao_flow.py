@@ -1,15 +1,17 @@
-import json
 from datetime import timedelta
 
 from airflow import DAG
 from airflow.utils.dates import days_ago
 from airflow.operators.python_operator import PythonOperator
 
-from pymongo import MongoClient
-
 from providers.scrapy.operator.scrapy import ScrapyOperator
+
+from scrapers.settings import SCRAPER_SETTINGS
+from scrapers.settings import get_feed_settings
 from scrapers.espacio_urbano_spider import EspacioUrbanoPageSpider
 from scrapers.espacio_urbano_spider import EspacioUrbanoItemSpider
+
+from utils.database import db_inser_file
 
 
 default_args = {
@@ -24,40 +26,18 @@ default_args = {
 }
 
 dag = DAG(
-    'airflow-scrapy',
+    'espaciourbano-scrapy',
     default_args=default_args,
-    description='A simple example of airflow with scrapy'
+    description='Espacio urbano scrapy'
     # schedule_interval=timedelta(days=1),
 )
-
-
-def get_db_connection():
-    client = MongoClient('mongodb://rental_db:27017/rentals')
-    db = client['rentals']
-    return db['houses_data']
-
-
-def db_insert(file_name):
-    with open(file_name) as jsonf:
-        data = json.load(jsonf)
-        db = get_db_connection()
-        db.insert_many(data)
 
 
 scrapy_page_op = ScrapyOperator(
     task_id='scrape_pages',
     provide_context=True,
     scraper_cls=EspacioUrbanoPageSpider,
-    scraper_settings={
-        'AUTOTHROTTLE_ENABLED': True,
-        'AUTOTHROTTLE_START_DELAY': 60.0,
-        'AUTOTHROTTLE_MAX_DELAY': 300.0,
-        'AUTOTHROTTLE_TARGET_CONCURRENCY': 0.5,
-        'AUTOTHROTTLE_DEBUG': True,
-        'DOWNLOAD_DELAY': 30.0,
-        'CONCURRENT_REQUESTS_PER_IP': 1,
-        'LOG_FORMAT': '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
-    },
+    scraper_settings=SCRAPER_SETTINGS,
     dag=dag
 )
 
@@ -65,17 +45,13 @@ scrapy_item_op = ScrapyOperator(
     task_id='scrape_items',
     provide_context=True,
     scraper_cls=EspacioUrbanoItemSpider,
-    scraper_settings={
-        'FEED_FORMAT': 'json',
-        'FEED_URI': f'/scrapers-data/json/{EspacioUrbanoItemSpider.__name__}.json',
-        'LOG_FORMAT': '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
-        },
+    scraper_settings=get_feed_settings(EspacioUrbanoItemSpider.__name__),
     dag=dag
 )
 
 store_items_op = PythonOperator(
     task_id='store_items',
-    python_callable=db_insert,
+    python_callable=db_inser_file,
     op_kwargs={'file_name': f'/scrapers-data/json/{EspacioUrbanoItemSpider.__name__}.json'},
     dag=dag
 )

@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 
-class scrapyHeaderSpider(scrapy.Spider):
+class CienCuadrasItemSpider(scrapy.Spider):
     name = "ciencuadras"
     current_page = 1
     max_page = 10   # 496 <- this is the real number
@@ -67,7 +67,7 @@ class scrapyHeaderSpider(scrapy.Spider):
         if not results:
             return
 
-        filename = f'/scrapers-data/{self.name}-{current_page}.json'
+        filename = f'/scrapers-data/json/{self.name}-{current_page}.json'
         with open(filename, 'w') as f:
             f.write(json.dumps(results))
         self.log(f'Saved file {filename}')

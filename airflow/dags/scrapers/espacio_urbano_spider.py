@@ -1,10 +1,7 @@
 
 """Espacio urbano spider."""
-import os
-import logging
-
 import scrapy
-from scrapy.utils.log import configure_logging
+from scrapers.settings import file_list_as_url
 
 
 class EspacioUrbanoPageSpider(scrapy.Spider):
@@ -62,7 +59,7 @@ class EspacioUrbanoItemSpider(scrapy.Spider):
                 # 'title': title,
                 # 'detail': detail,
                 'neighborhood': neighborhood,
-                'square_meters': square_meters,
+                'square_meters': square_meters.replace(' M2', ''),
                 'price': price
             }
 
@@ -75,8 +72,3 @@ class EspacioUrbanoItemSpider(scrapy.Spider):
             for the_char in chars_to_remove:
                 data = data.replace(the_char, "")
         return data
-
-
-def file_list_as_url(name, path="/scrapers-data/html/"):
-    return [f"file:////{f.path}" for f in os.scandir(path=path)
-            if f.is_file() and name in f.name]

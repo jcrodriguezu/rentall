@@ -9,9 +9,11 @@ from airflow.operators.python_operator import PythonOperator
 from providers.scrapy.operator.scrapy import ScrapyOperator
 
 from scrapers.settings import SCRAPER_SETTINGS
+from scrapers.settings import get_feed_settings
+from scrapers.cien_cuadras_spider import CienCuadrasPageSpider
 from scrapers.cien_cuadras_spider import CienCuadrasItemSpider
 
-from utils.database import db_insert_json
+from utils.database import db_inser_file
 
 
 default_args = {
@@ -33,32 +35,28 @@ dag = DAG(
 )
 
 
-def process_files(name=CienCuadrasItemSpider.name, path='/scrapers-data/json/'):
-    file_list = [f.path for f in os.scandir(path=path)
-                 if f.is_file() and name in f.name]
-    for f in file_list:
-        print(f'*********************************processing {f}')
-        with open(f) as json_file:
-            data = json.load(json_file)
-            db_insert_json(data)
-
+scrapy_page_op = ScrapyOperator(
+    task_id='scrape_page',
+    provide_context=True,
+    scraper_cls=CienCuadrasPageSpider,
+    scraper_settings=SCRAPER_SETTINGS,
+    dag=dag
+)
 
 scrapy_items_op = ScrapyOperator(
-    task_id='scrape-items',
+    task_id='scrape_items',
     provide_context=True,
     scraper_cls=CienCuadrasItemSpider,
-    scraper_settings=SCRAPER_SETTINGS,
+    scraper_settings=get_feed_settings(CienCuadrasItemSpider.__name__),
     dag=dag
 )
 
 store_items_op = PythonOperator(
     task_id='store_items',
-    python_callable=process_files,
+    python_callable=db_inser_file,
+    op_kwargs={'file_name': f'/scrapers-data/json/{CienCuadrasItemSpider.__name__}.json'},
     dag=dag
 )
 
-scrapy_items_op >> store_items_op
+scrapy_page_op >> scrapy_items_op >> store_items_op
 
-
-# TODO: crear un spider que procese cada item, filtre los campos y guarde un solo archivo,
-# este archivo es el que se guarda en la db

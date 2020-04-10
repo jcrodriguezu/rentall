@@ -2,12 +2,13 @@ import scrapy
 import json
 
 from datetime import datetime
+from scrapers.settings import file_list_as_url
 
 
-class CienCuadrasItemSpider(scrapy.Spider):
+class CienCuadrasPageSpider(scrapy.Spider):
     name = "ciencuadras"
     current_page = 1
-    max_page = 10   # 496 <- this is the real number
+    max_page = 5   # 496 <- this is the real number
 
     # Set the headers here. The important part is "application/json"
     url = "https://api.ciencuadras.com/api/realestates"
@@ -67,7 +68,7 @@ class CienCuadrasItemSpider(scrapy.Spider):
         if not results:
             return
 
-        filename = f'/scrapers-data/json/{self.name}-{current_page}.json'
+        filename = f'/scrapers-data/html/{self.name}-{current_page}.json'
         with open(filename, 'w') as f:
             f.write(json.dumps(results))
         self.log(f'Saved file {filename}')
@@ -79,3 +80,25 @@ class CienCuadrasItemSpider(scrapy.Spider):
             headers=self.headers,
             body=json.dumps(self.body)
         )
+
+
+class CienCuadrasItemSpider(scrapy.Spider):
+    """Cien cuadras item spider."""
+
+    name = "ciencuadras_items"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.start_urls = file_list_as_url('ciencuadras')
+
+    def parse(self, response):
+        items = json.loads(response.text)
+        for item in items:
+            parsed_item = {
+                'neighborhood': item['barrio'],
+                'square_meters': item['area_construida'],
+                'price': item['precio_venta'],
+                'location': item['localizacion']
+            }
+
+            yield parsed_item

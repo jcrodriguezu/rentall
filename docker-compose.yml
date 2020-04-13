@@ -1,26 +1,82 @@
-version: '3'
+version: '3.5'
 
 services:
-  rental_db:
-    image: mongo:3.6
-    volumes:
-      - ./mongo-data:/var/lib/mongodb
-    ports:
-      - "27018:27018"
-  web:
-    build: ./rental_web_admin
-    volumes:
-      - ./rental_web_admin:/rental_web_admin
-    ports:
-      - "8000:8000"
+  airflow:
+    restart: always
+    build: ./airflow
+    environment: 
+      - LOAD_EX=n
+      - EXECUTOR=Local
+      - DB_CONN=mongodb://rental_db:27017/
+      - DB_NAME=rentals
+      - COLLECTION=houses_data
     depends_on:
+      - postgres
       - rental_db
-  crawler:
-    build: ./rental_scraper
+    volumes: 
+      - ./airflow/dags:/usr/local/airflow/dags
+      - ./airflow/logs:/usr/local/airflow/logs
+      - ./scrapers-data:/scrapers-data
+    links:
+      - rental_db
+      - postgres
+
+  rental_db:
+    restart: always
+    image: mongo:4.2
+    command: ["--bind_ip_all"]
     volumes:
-      - ./rental_scraper:/rental_scraper
+      - ./mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  postgres:
+    restart: always
+    image: postgres:9.6
+    environment:
+      - POSTGRES_USER=airflow
+      - POSTGRES_PASSWORD=airflow
+      - postgres=airflow
+    ports:
+      - "5439:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  initdb:
+    build: ./airflow
+    entrypoint: airflow initdb
+    depends_on:
+      - postgres
+    links:
+      - postgres
+
+  webserver:
+    build: ./airflow
+    restart: always
+    depends_on:
+      - postgres
+    environment: 
+      - LOAD_EX=n
+      - EXECUTOR=Local
+      - DB_CONN=mongodb://rental_db:27017/
+      - DB_NAME=rentals
+      - COLLECTION=houses_data
+    logging:
+      options:
+          max-size: 10m
+          max-file: "3"
+    volumes:
+      - ./airflow/dags:/usr/local/airflow/dags
+      - ./airflow/logs:/usr/local/airflow/logs
+      - ./scrapers-data:/scrapers-data
     ports:
       - "8080:8080"
-    depends_on:
+    entrypoint: airflow webserver
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    links:
       - rental_db
-
+      - postgres

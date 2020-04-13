@@ -5,6 +5,7 @@ from datetime import timedelta
 from airflow import DAG
 from airflow.utils.dates import days_ago
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.bash_operator import BashOperator
 
 from providers.scrapy.operator.scrapy import ScrapyOperator
 
@@ -35,11 +36,25 @@ dag = DAG(
 )
 
 
+clean_json_dir = BashOperator(
+    task_id='clean_json_directory',
+    bash_command=f'rm /scrapers-data/json/{CienCuadrasItemSpider.__name__}.* 2> /dev/null || echo > /dev/null',
+    dag=dag
+)
+
+clean_html_dir = BashOperator(
+    task_id='clean_html_directory',
+    bash_command=f'rm /scrapers-data/html/{CienCuadrasPageSpider.name}*.* 2> /dev/null || echo > /dev/null',
+    trigger_rule='all_done',
+    dag=dag
+)
+
 scrapy_page_op = ScrapyOperator(
     task_id='scrape_page',
     provide_context=True,
     scraper_cls=CienCuadrasPageSpider,
     scraper_settings=SCRAPER_SETTINGS,
+    trigger_rule='all_done',
     dag=dag
 )
 
@@ -58,5 +73,4 @@ store_items_op = PythonOperator(
     dag=dag
 )
 
-scrapy_page_op >> scrapy_items_op >> store_items_op
-
+clean_html_dir >> clean_json_dir >> scrapy_page_op >> scrapy_items_op >> store_items_op

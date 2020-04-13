@@ -8,7 +8,7 @@ from scrapers.settings import file_list_as_url
 class CienCuadrasPageSpider(scrapy.Spider):
     name = "ciencuadras"
     current_page = 1
-    max_page = 5   # 496 <- this is the real number
+    max_page = 490
 
     # Set the headers here. The important part is "application/json"
     url = "https://api.ciencuadras.com/api/realestates"
@@ -40,7 +40,6 @@ class CienCuadrasPageSpider(scrapy.Spider):
     }
 
     def start_requests(self):
-        # import pdb; pdb.set_trace()
         yield scrapy.http.Request(
             self.url,
             method='POST',
@@ -63,7 +62,6 @@ class CienCuadrasPageSpider(scrapy.Spider):
                 current_page >= self.max_page:
             return
 
-        # import pdb; pdb.set_trace()
         results = data.get('result', None)
         if not results:
             return

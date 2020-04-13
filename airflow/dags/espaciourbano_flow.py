@@ -3,6 +3,7 @@ from datetime import timedelta
 from airflow import DAG
 from airflow.utils.dates import days_ago
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.bash_operator import BashOperator
 
 from providers.scrapy.operator.scrapy import ScrapyOperator
 
@@ -32,12 +33,26 @@ dag = DAG(
     # schedule_interval=timedelta(days=1),
 )
 
+clean_json_dir = BashOperator(
+    task_id='clean_json_directory',
+    bash_command=f'rm /scrapers-data/json/{EspacioUrbanoItemSpider.__name__}.* 2> /dev/null || echo > /dev/null',
+    trigger_rule='all_done',
+    dag=dag
+)
+
+clean_html_dir = BashOperator(
+    task_id='clean_html_directory',
+    bash_command=f'rm /scrapers-data/html/{EspacioUrbanoPageSpider.name}*.* 2> /dev/null || echo > /dev/null',
+    trigger_rule='all_done',
+    dag=dag
+)
 
 scrapy_page_op = ScrapyOperator(
     task_id='scrape_pages',
     provide_context=True,
     scraper_cls=EspacioUrbanoPageSpider,
     scraper_settings=SCRAPER_SETTINGS,
+    trigger_rule='all_done',
     dag=dag
 )
 
@@ -56,6 +71,4 @@ store_items_op = PythonOperator(
     dag=dag
 )
 
-scrapy_page_op >> scrapy_item_op >> store_items_op
-
-# pendiente: ver como se puede ejecutar los scraper de scrapy desde airflow
+clean_html_dir >> clean_json_dir >> scrapy_page_op >> scrapy_item_op >> store_items_op

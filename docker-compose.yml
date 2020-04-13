@@ -1,32 +1,12 @@
 version: '3.5'
 
 services:
-  airflow:
-    restart: always
-    build: ./airflow
-    environment: 
-      - LOAD_EX=n
-      - EXECUTOR=Local
-      - DB_CONN=mongodb://rental_db:27017/
-      - DB_NAME=rentals
-      - COLLECTION=houses_data
-    depends_on:
-      - postgres
-      - rental_db
-    volumes: 
-      - ./airflow/dags:/usr/local/airflow/dags
-      - ./airflow/logs:/usr/local/airflow/logs
-      - ./scrapers-data:/scrapers-data
-    links:
-      - rental_db
-      - postgres
-
   rental_db:
     restart: always
     image: mongo:4.2
     command: ["--bind_ip_all"]
     volumes:
-      - ./mongo-data:/data/db
+      - ./data/mongodb:/data/db
     ports:
       - "27017:27017"
 
@@ -50,33 +30,33 @@ services:
     links:
       - postgres
 
-  webserver:
-    build: ./airflow
+  airflow:
     restart: always
-    depends_on:
-      - postgres
+    build: ./airflow
     environment: 
       - LOAD_EX=n
       - EXECUTOR=Local
       - DB_CONN=mongodb://rental_db:27017/
       - DB_NAME=rentals
       - COLLECTION=houses_data
-    logging:
-      options:
-          max-size: 10m
-          max-file: "3"
-    volumes:
+    depends_on:
+      - postgres
+      - rental_db
+    volumes: 
       - ./airflow/dags:/usr/local/airflow/dags
       - ./airflow/logs:/usr/local/airflow/logs
       - ./scrapers-data:/scrapers-data
-    ports:
-      - "8080:8080"
-    entrypoint: airflow webserver
+    links:
+      - rental_db
+      - postgres
     healthcheck:
       test: ["CMD-SHELL", "[ -f /usr/local/airflow/airflow-webserver.pid ]"]
       interval: 30s
       timeout: 30s
       retries: 3
-    links:
-      - rental_db
-      - postgres
+    logging:
+      options:
+          max-size: 10m
+          max-file: "3"
+    ports:
+      - "8080:8080"

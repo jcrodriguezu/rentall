@@ -18,7 +18,7 @@ class EspacioUrbanoPageSpider(scrapy.Spider):
         self._save_file(response)
         next_page = response.xpath(self.next_page_xpath)[0].get()
         print(next_page)
-        if next_page and self.count < 5:   # for testing, only download 10 pages
+        if next_page:   # and self.count < 5:    # for testing, only download 10 pages
             self.count += 1
             yield response.follow(next_page, callback=self.parse)
 
